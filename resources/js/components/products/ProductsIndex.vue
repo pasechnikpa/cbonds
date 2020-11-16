@@ -1,23 +1,31 @@
 <template>
     <div>
         <div class="form-group">
-            <router-link :to="{name: 'createProduct'}" class="btn btn-success">Create new product</router-link> 
+            <router-link :to="{name: 'createProduct'}" class="btn btn-success">Добавить товар</router-link> 
         </div>
         <div class="input-group mb-3">
             <div class="input-group-prepend">
-                <span class="input-group-text" id="product-filter">Filter</span>
+                <span class="input-group-text" id="product-filter">Поиск по названию</span>
             </div>
-            <input type="text" class="form-control" placeholder="name" aria-label="Product name" aria-describedby="product-filter">
+            <input type="text" class="form-control" 
+                placeholder="введите название..." aria-label="Product name" aria-describedby="product-filter"
+                v-model="productNameFilter"
+            >
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button" @click="productNameFilter=''">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
         </div>
         <div class="panel panel-default">
-            <div class="panel-heading">Products list</div>
+            <div class="panel-heading">Список товаров</div>
             <div class="panel-body">
                 <table class="table table-bordered table-striped">
                     <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Price</th>
-                        <th width="100">&nbsp;</th>
+                        <th>Название</th>
+                        <th>Стоимость</th>
+                        <th>&nbsp;</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -25,25 +33,22 @@
                             <td>{{ product.name }}</td>
                             <td>{{ product.price }}</td>
                             <td>
-                                <router-link :to="{name: 'editProduct', params: {id: product.id}}" class="btn btn-xs btn-default">
-                                    Edit
+                                <router-link :to="{name: 'editProduct', params: {id: product.id}}" class="btn btn-xs btn-primary">
+                                    Редактировать
                                 </router-link>
-                                <a href="#"
-                                class="btn btn-xs btn-danger"
-                                v-on:click="deleteEntry(product.id)">
-                                    Delete
-                                </a>
+                                
+                                <confirm v-on:confirm="deleteEntry(product.id)"></confirm>
                             </td>
                         </tr>
                     </tbody>
                 </table>
                 <div class="panel-footer">
                     <ul class="pagination">
-                        <li class="page-item"><a class="page-link" href="#" @click.prevent="changePagePrevious()">Previous</a></li>
+                        <li class="page-item"><a class="page-link" href="#" @click.prevent="changePagePrevious()">Назад</a></li>
                         <li :class="'page-item '+(page==currentPage?'active':'')" v-for="page in pages">
                             <a class="page-link" href="#" @click.prevent="changePage(page)">{{page}}</a>
                         </li>
-                        <li class="page-item"><a class="page-link" href="#" @click.prevent="changePageNext()">Next</a></li>
+                        <li class="page-item"><a class="page-link" href="#" @click.prevent="changePageNext()">Вперед</a></li>
                     </ul>
                 </div>
             </div>
@@ -52,23 +57,31 @@
 </template>
  
 <script>
+    import Confirm from '../Confirm.vue';
     export default {
-        data: function () {
+        data () {
             return {
                 products: [],
                 currentPage: 1,
                 pageItemsCount: 5,
+                productNameFilter: '',
             }
         },
+        components: {Confirm},
         computed: {
             lastPage() {
-                return Math.ceil(this.products.length / this.pageItemsCount)
+                return Math.ceil(this.filteredProducts.length / this.pageItemsCount)
             },
             pages(){
                 return Array.from(Array(this.lastPage), (_,x) => x+1)
             },
+            filteredProducts(){
+                return this.products.filter((item,_) => 
+                    item.name.includes(this.productNameFilter)
+                )
+            },
             currentPageProducts(){
-                return this.products.filter((_,index) => 
+                return this.filteredProducts.filter((_,index) => 
                     ((index >= (this.currentPage-1)*this.pageItemsCount) && 
                     (index < this.currentPage*this.pageItemsCount))
                 )
@@ -100,15 +113,12 @@
                 }
             },
             async deleteEntry(id) {
-                if (confirm("Do you really want to delete it?")) {
-                    var app = this;
-                    try {
-                        let resp = await axios.delete('/api/v1/products/' + id)
-                        this.products = this.products.filter(item => item.id !== id)
-                    } catch(error) {
-                        console.log(error)
-                        alert("Could not delete product")
-                    }
+                try {
+                    let resp = await axios.delete('/api/v1/products/' + id)
+                    this.products = this.products.filter(item => item.id !== id)
+                } catch(error) {
+                    console.log(error)
+                    alert("Could not delete product")
                 }
             }
         }

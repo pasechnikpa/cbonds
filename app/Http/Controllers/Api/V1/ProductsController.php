@@ -36,8 +36,16 @@ class ProductsController extends Controller
      */
     public function store(Request $request)
     {
-        $product = Product::create($request->all());
-        return $product;
+        $validator = $this->validate($request, [
+            'name' => 'required|unique:products|max:255',
+            'price' => 'required|numeric|gt:0',
+        ]);
+        // if($validator->passes()){
+            $product = Product::create($request->all());
+            return $product;
+        // } else {
+        //     return $validator->errors();
+        // }
     }
 
     /**

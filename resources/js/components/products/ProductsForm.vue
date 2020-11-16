@@ -1,28 +1,32 @@
 <template>
     <div>
         <div class="form-group">
-            <router-link to="/" class="btn btn-default">Back</router-link>
+            <router-link to="/" class="btn btn-primary">Назад</router-link>
         </div>
 
         <div class="panel panel-default">
-            <div class="panel-heading">Create new product</div>
+            <div class="panel-heading">{{formText}} товар</div>
             <div class="panel-body">
                 <form @submit.prevent="saveForm()">
-                    <div class="row">
+                    <div class="row" v-if="errorData && errorData.message">
                         <div class="col-xs-12 form-group">
-                            <label class="control-label">Product name</label>
-                            <input type="text" v-model="product.name" class="form-control">
+                            <div class="alert alert-danger">
+                                {{errorData.message}}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row" v-for="label, fieldName in fields" :key="fieldName">
+                        <div class="col-xs-12 form-group">
+                            <label class="control-label">{{label}}</label>
+                            <div class="alert alert-danger" v-if="errorData && errorData.errors && errorData.errors[fieldName]">
+                                {{errorData.errors[fieldName].join(' ')}}  
+                            </div>
+                            <input type="text" v-model="product[fieldName]" class="form-control">
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-xs-12 form-group">
-                            <label class="control-label">Product price</label>
-                            <input type="text" v-model="product.price" class="form-control">
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-xs-12 form-group">
-                            <button class="btn btn-success">Create</button>
+                            <button class="btn btn-success">{{formText}}</button>
                         </div>
                     </div>
                 </form>
@@ -36,15 +40,23 @@
         data() {
             return {
                 productId: null,
+                fields: {
+                    name: 'Название товара',
+                    price: 'Стоимость товара'
+                },
                 product: {
                     name: '',
                     price: '',
-                }
+                },
+                errorData: false,
             }
         },
         computed: {
             formTypeEdit(){
                 return this.productId !== null
+            },
+            formText(){
+                return this.formTypeEdit?'Изменить':'Добавить';
             }
         },
         mounted() {
@@ -84,9 +96,19 @@
                     console.log(resp)
                     console.log('created?')
                     this.$router.push('/')
-                } catch (resp) {
-                    console.log(resp);
-                    alert("Could not create product");
+                } catch (err) {
+                    if (err.response.status === 422) {
+                        this.errorData = {
+                            message: 'Форма заполнена некорретно',
+                            errors: err.response.data.errors
+                        }
+                    } else {
+                        this.errorData = {
+                            message: 'Неизвестная ошибка',
+                            errors: []
+                        }
+                    }
+                    // alert("Could not create product");
                 }
             }
         }
