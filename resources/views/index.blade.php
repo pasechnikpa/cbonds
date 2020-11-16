@@ -36,6 +36,8 @@
             <div class="row">
                 Полученный результ можно прислать архивом по почте, выложить в облако или в своем репозитории.
             </div>
+            <router-view name="companiesIndex"></router-view>
+            <router-view></router-view>
         </div>
     </div>
 @endsection
